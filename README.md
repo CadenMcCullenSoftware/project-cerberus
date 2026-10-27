@@ -35,6 +35,14 @@ The outcome is actionability. A PDF, README, or app screen is a delivery format,
 
 Follow the user's requested presentation order when supplied. Keep essential qualifications beside affected instructions and optional technical depth afterward.
 
+## Choose How to Use CERBERUS
+
+| Your goal | Starting point | What to expect |
+| --- | --- | --- |
+| Conduct a research task | Follow “Start Here” and copy the templates into a private task workspace. | A structured process for producing source-supported answers and usable instructions. |
+| Create a separate project repository | Follow “Set Up a Separate Project” from a committed clone. | A new local repository containing the committed framework files selected by the setup script. Publication is optional. |
+| Download the research documents and templates | Use a published release, when available. | Documentation and template archives—not an application build or the complete repository tooling. |
+
 ## Start Here
 
 1. Copy [the request template](templates/request.md) into a private task workspace.
@@ -109,6 +117,13 @@ git push origin v0.1.0
 ```
 
 The [release workflow](.github/workflows/release.yml) publishes documentation and templates as ZIP and tar.gz archives with SHA-256 checksums. Tags such as v0.1.0-rc.1 are prereleases. Committing the workflow does not create a release.
+
+Release archives contain the README, contribution and security guidance,
+methodology, product requirements, and research templates, plus applicable
+license or notice files when present.
+
+The archives do not include the setup script, validator, or GitHub
+automation. Clone the repository when you need those tools.
 
 ## Ownership and Project Status
 

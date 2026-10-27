@@ -75,6 +75,57 @@ Output: Finished report and completed QA checklist.
 
 Completion: Acceptance criteria are met or remaining limitations are explicit.
 
+## Research Record and Stage Completion
+
+Maintain one concise research record for each task. Reuse existing
+templates and evidence-matrix fields rather than duplicating their contents.
+
+Record:
+
+- Task identifier and exact question.
+- Scope brief and acceptance criteria.
+- Source references and existing claim identifiers.
+- Approaches and instructions supported by those claims.
+- Stage completion status and supporting record locations.
+- Unresolved gaps, affected conclusions, and final review outcome.
+
+Use the following stage record:
+
+| Stage | Status | Supporting record | Remaining gap or reason for return |
+| --- | --- | --- | --- |
+| 1. Scope definition and parameter alignment | | | |
+| 2. Multi-source information gathering | | | |
+| 3. AI-assisted synthesis and cross-verification | | | |
+| 4. Goal-aligned technical structuring | | | |
+| 5. Quality assurance and formatting | | | |
+
+Status values:
+
+- Not started: Work has not begun.
+- In progress: Work is underway.
+- Blocked: A missing input or dependency prevents completion.
+- Complete: The stage's stated completion condition is satisfied.
+
+Record limitations even when a stage is complete. A completed stage does
+not establish that every uncertainty has been resolved.
+
+When returning to an earlier stage, record the reason and identify any
+downstream findings, instructions, or review results that require rechecking.
+
+## Connecting Questions, Findings, and Instructions
+
+For each material conclusion or practical approach:
+
+1. Identify the question or acceptance criterion it addresses.
+2. Link it to the relevant claim identifiers and source references.
+3. State the conditions under which it applies.
+4. Connect its instructions to an expected result and verification step.
+5. Record unresolved limitations beside the affected conclusion or action.
+
+Use references to existing records instead of creating duplicate evidence
+entries. Do not treat a completed record or passing structural check as
+verification of factual accuracy.
+
 ## Approach A: Structured Literature & Data Synthesis
 
 1. Define queries and inclusion and exclusion criteria.
