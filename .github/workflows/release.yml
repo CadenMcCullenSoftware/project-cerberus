@@ -1,0 +1,88 @@
+name: Publish CERBERUS Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions: {}
+
+concurrency:
+  group: cerberus-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: bash
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Validate framework
+        run: |
+          python scripts/validate.py
+          bash -n setup-cerberus.sh
+      - name: Validate release tag
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(alpha|beta|rc)\.(0|[1-9][0-9]*))?$ ]]; then
+            echo 'Use vMAJOR.MINOR.PATCH or an alpha, beta, or rc suffix.' >&2
+            exit 1
+          fi
+          git show-ref --verify --quiet refs/remotes/origin/main
+          git merge-base --is-ancestor HEAD refs/remotes/origin/main
+      - name: Package documentation and templates
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          package="cerberus-${RELEASE_TAG}"
+          inputs=(README.md CONTRIBUTING.md SECURITY.md docs templates)
+          for file in LICENSE LICENSE.md LICENSE.txt NOTICE; do
+            if [[ -f "$file" ]]; then inputs+=("$file"); fi
+          done
+          git archive --format=tar.gz --prefix="${package}/" --output="dist/${package}.tar.gz" HEAD -- "${inputs[@]}"
+          git archive --format=zip --prefix="${package}/" --output="dist/${package}.zip" HEAD -- "${inputs[@]}"
+          (
+            cd dist
+            sha256sum "${package}.tar.gz" "${package}.zip" > SHA256SUMS.txt
+            sha256sum --check SHA256SUMS.txt
+          )
+      - name: Write release notes
+        run: |
+          set -euo pipefail
+          commit=$(git rev-parse HEAD)
+          cat > dist/RELEASE_NOTES.md <<EOF
+          # CERBERUS ${RELEASE_TAG}
+
+          Canonical methodology, product requirements, research templates,
+          contribution guidance, and security guidance.
+
+          This is a documentation-framework distribution, not an app build.
+          ZIP and tar.gz contain the same framework files.
+          SHA256SUMS.txt contains archive checksums.
+
+          Tag: ${RELEASE_TAG}
+          Commit: ${commit}
+          EOF
+      - name: Publish GitHub release
+        run: |
+          set -euo pipefail
+          flags=(--verify-tag --title "CERBERUS ${RELEASE_TAG}" --notes-file dist/RELEASE_NOTES.md)
+          if [[ "$RELEASE_TAG" == *-* ]]; then flags+=(--prerelease); fi
+          gh release create "$RELEASE_TAG" "dist/cerberus-${RELEASE_TAG}.tar.gz" "dist/cerberus-${RELEASE_TAG}.zip" dist/SHA256SUMS.txt "${flags[@]}"
+      - name: Record publication
+        run: |
+          echo "Published CERBERUS ${RELEASE_TAG}" >> "$GITHUB_STEP_SUMMARY"
