@@ -31,8 +31,10 @@ jobs:
         run: python scripts/validate.py
       - name: Check Bash syntax
         run: bash -n setup-cerberus.sh
+      - name: Run setup integration tests
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
       - name: Check tracked whitespace
         run: git diff-tree --check --root HEAD
       - name: Record check scope
         run: |
-          echo 'Structural checks passed. Factual, usability, and security review remain required.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Structural checks and setup integration tests passed. Factual, usability, and security review remain required.' >> "$GITHUB_STEP_SUMMARY"
