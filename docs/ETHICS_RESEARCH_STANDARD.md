@@ -1,6 +1,6 @@
 # CERBERUS Ethics-Based Research Operating Standard
 
-Version: 1.0 | Prepared: 2026-10-27 | Status: proposed operating policy; effective upon repository-owner approval.
+Version: 1.1-draft | Prepared: 2026-10-27 | Updated: 2026-10-28 | Status: proposed operating policy; effective upon repository-owner approval of the exact version and scope.
 
 ## 1. Required question and purpose
 
@@ -16,7 +16,7 @@ Assumptions: CERBERUS is a human-governed research workflow; audiences and juris
 
 ## 2. Standard of worth/value for the work
 
-Original analysis / adopted policy: Work has value when it answers the stated question accurately and usefully, supports informed human agency, respects dignity and rights, makes evidence and uncertainty visible, and gives proportionate attention to foreseeable impacts. Revenue, speed, popularity, and technical sophistication are not sufficient measures by themselves. Do not rank human worth.
+Original analysis / proposed operational synthesis: Work has value when it answers the stated question accurately and usefully, supports informed human agency, respects dignity and rights, makes evidence and uncertainty visible, and gives proportionate attention to foreseeable impacts. Revenue, speed, popularity, and technical sophistication are not sufficient measures by themselves. Do not rank human worth.
 
 Underlying principles:
 1. Dignity and rights: Treat people respectfully; avoid dehumanizing language and unnecessary personal judgments.
@@ -170,3 +170,19 @@ O2 — OECD/UNESCO status explanation, secondary legal-policy context; not juris
 Project context — cerberus-research-record.md, supplied Project File: existing distinctions among facts, interpretations, hypotheses, uncertainty, clarification, and conditional guidance. Its attribution and user-entered claims are not independently verified.
 
 Sources reviewed: 2026-10-27. Research sequence for this draft: review project inventory and relevant record; check prior CERBERUS context; discover GitHub tools and inspect repository; search UNESCO and OECD material; verify OECD overview; check proposed file destination; synthesize policy and review checks. PDF extraction was incomplete and was not treated as substantive evidence. No implementation, automated enforcement, or CI test was performed.
+
+## 14. Source provenance and authority
+
+Integration source: Ethical Research and Axiom Hive: Integrated Plug-and-Play Technical Profile, prepared 20 October 2026, supplied as ethical_research_and_axiom_hive_integrated.pdf. Source author as supplied: MIA. Source attribution: This was supported for MIA by Kilo (kilo-auto/free).
+
+The profile combines an operational presentation of Ethical Research and Analysis Standards version 1.0 with an Axiom Hive manifesto excerpt version 1.1. These versions identify different documents, not successive versions of one specification. See [source material register](source-material-register.md) for page locators and retrieval limitations.
+
+Imported source requirements, CERBERUS adaptations, and editorial implementation guidance remain distinguishable. Similarity does not establish that this operating standard reproduces or replaces the complete MIA Standard. The derived manifesto does not supersede component requirement text. Unresolved conflicts require recorded human disposition.
+
+The present integration is proposed documentation. Repository inclusion or commit approval does not establish policy adoption, runtime enforcement, certification, persistent memory, or permission for any subsequent external action. Policy adoption requires a human decision identifying the exact version, scope, date, and conditions. No adoption decision is recorded here.
+
+Select and record a workflow using [workflow variants](workflow-variants.md). Preserve Docs and AgentDocs identifiers and source order; do not silently merge or renumber them. Missing named directives remain unavailable until actual text is retrieved and reviewed.
+
+## 15. Integration change record
+
+2026-10-28: Prepared version 1.1-draft; corrected the adopted-policy label to proposed operational synthesis; added source provenance, authority boundaries, workflow references, and supporting request/QA fields. AI-assisted documentation preparation; human policy adoption pending. This change preserves prior international-framework text and references; those sources were not independently revalidated during this integration. No runtime or CI execution is reported by this record.
