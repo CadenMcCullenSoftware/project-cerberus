@@ -7,6 +7,8 @@
 A canonical research framework for turning complex questions into
 credible options, clear answers, and instructions people can use.
 
+Created by Nicholas M. Grossi, Caden H. McCullen, Alexis M. Adam’s, Hannah E. Dolch, and Tyler R. White.
+
 Repository owner: [Caden McCullen](https://github.com/CadenMcCullenSoftware)
 
 [Start here](#start-here) · [Methodology](docs/methodology.md) · [Requirements](docs/product-requirements.md) · [Research templates](#research-toolkit)
