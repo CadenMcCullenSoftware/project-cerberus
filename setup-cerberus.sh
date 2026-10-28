@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+CREATED_TARGET=
+cleanup_created_target() {
+  local status=$?
+  trap - EXIT
+  if [[ $status -ne 0 && -n $CREATED_TARGET ]]; then
+    if [[ -d $CREATED_TARGET && ! -L $CREATED_TARGET ]]; then
+      rmdir -- "$CREATED_TARGET" 2>/dev/null || true
+    fi
+  fi
+  exit "$status"
+}
+trap cleanup_created_target EXIT
+
 die() { printf 'Error: %s\n' "$*" >&2; exit 1; }
 usage() {
   cat <<'EOF'
@@ -37,7 +50,12 @@ fi
 if [[ -e $TARGET ]]; then
   [[ -d $TARGET ]] || die 'Target is not a directory.'
 else
-  mkdir -p -- "$TARGET"
+  TARGET_PARENT=$(dirname -- "$TARGET")
+  mkdir -p -- "$TARGET_PARENT"
+  TARGET_PARENT=$(cd -- "$TARGET_PARENT" && pwd)
+  TARGET="$TARGET_PARENT/$(basename -- "$TARGET")"
+  mkdir -- "$TARGET"
+  CREATED_TARGET=$TARGET
 fi
 TARGET=$(cd -- "$TARGET" && pwd)
 CONTENTS=$(find "$TARGET" -mindepth 1 -maxdepth 1 -print -quit) || die 'Cannot inspect target.'
