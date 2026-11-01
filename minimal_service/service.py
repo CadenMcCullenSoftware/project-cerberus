@@ -17,6 +17,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 LIMIT = 262144
+CLIENT_SOCKET_TIMEOUT = 10
 
 def now():
     return datetime.now(timezone.utc).isoformat()
@@ -173,6 +174,10 @@ def work_once(db, fetcher=fetch):
     return True
 
 class Handler(BaseHTTPRequestHandler):
+    # StreamRequestHandler.setup() applies this to the accepted socket
+    # before the request line, headers, or body are read.
+    timeout = CLIENT_SOCKET_TIMEOUT
+
     def log_message(self, *args):
         pass
 
@@ -199,7 +204,11 @@ class Handler(BaseHTTPRequestHandler):
                 size = int(self.headers.get('Content-Length', '0'))
                 if not 0 < size <= LIMIT:
                     raise ValueError('Invalid request size')
-                data = json.loads(self.rfile.read(size))
+                body = self.rfile.read(size)
+                if len(body) != size:
+                    self.close_connection = True
+                    return self.respond(400, {'error': 'Incomplete request body'})
+                data = json.loads(body)
                 result = submit(db, data) if self.path == '/requests' else product(db, data)
                 return self.respond(422 if result.get('accepted') is False else 201, result)
             if self.command == 'GET' and self.path.startswith('/requests/'):
@@ -212,6 +221,10 @@ class Handler(BaseHTTPRequestHandler):
                 result['evidence'] = [dict(r) for r in db.execute('SELECT id,url,fetched_at,sha256,media_type FROM evidence WHERE request_id=?', (rid,))]
                 return self.respond(200, result)
             self.respond(404, {'error': 'Unknown endpoint'})
+        except TimeoutError:
+            # Do not attempt another write on a timed-out connection.
+            # The handler lifecycle closes it after database cleanup.
+            self.close_connection = True
         except (ValueError, TypeError, OverflowError, RecursionError):
             self.respond(400, {'error': 'Invalid request'})
         except Exception:
