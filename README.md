@@ -50,6 +50,78 @@ release approval, or a publication endpoint. Structural acceptance of
 a work product does not establish factual accuracy, source support,
 or permission to publish.
 
+### Status vocabulary
+
+| Term | Meaning |
+| --- | --- |
+| Implemented | Code exists on main at a named commit. |
+| Tested | Test cases exist for the named conditions. |
+| CI verified | An Actions run on that exact SHA passed; record the event and tested scope. |
+| Unverified | No independent verification record is available for the stated assessment. |
+| Not established | The function cannot be claimed from the inspected material. |
+
+Proposed mappings and unrun tests do not establish implementation.
+Test-case presence and test execution are separate records.
+
+### Function-level assessment
+
+Assessment date: November 1, 2026. Inspected implementation baseline:
+`f3471215eef2ee824633264a66b99934420ea61f`.
+
+| Function | Status | Tested | CI verified |
+| --- | --- | --- | --- |
+| Request authentication, validation, storage, source queueing | Implemented | | |
+| Query classification | Not established | | |
+| Structural evidence-reference validation | Implemented | | |
+| Semantic source-support checking | Not established | | |
+| Executable synthesis and recommendation | Not established | | |
+
+Blank Tested and CI verified cells mean those statuses have not been
+established by this assessment. The relevant test contents and a
+successful exact-SHA run must be inspected before filling them in.
+
+Implementation locations in `minimal_service/service.py`:
+
+- `Handler.handle_request()` checks bearer-token authentication.
+- `submit()` validates and stores the question and queues supplied
+  source URLs; it does not classify queries.
+- `product()` validates claim structure and checks that referenced
+  evidence belongs to the same request. It does not determine whether
+  source content supports a claim.
+
+### Conceptual three-head model
+
+The three-head model is a conceptual grouping, not three established
+executable components. The implemented service and the documented
+five-stage research methodology must remain distinct.
+
+| Conceptual head | Description and boundary |
+| --- | --- |
+| Head 1: Perception | Request authentication, validation, storage, and source queueing. Query classification is not established. |
+| Head 2: Verification | Structural evidence-reference validation. Semantic source-support checking is not established. |
+| Head 3: Guidance | Documented AI-assisted synthesis and recommendations. Executable synthesis and recommendation are not established. |
+
+### CI provenance
+
+CI status for `f3471215eef2ee824633264a66b99934420ea61f`:
+Unverified as of November 1, 2026.
+
+Run `41333988500` remains unconfirmed. Its head SHA, conclusion,
+event, and tested scope were not retrieved in this assessment.
+Unsuccessful retrieval is not an empty run list or a failed CI run.
+No claim of independent retrieval or successful execution is made.
+
+Before assigning CI verified, record together:
+
+1. The full assessed commit SHA.
+2. The run URL and successful conclusion.
+3. The event type and checkout target.
+4. The workflow, jobs, and commands actually executed.
+5. The assessment date.
+
+A matching `headSha` alone is insufficient. A successful workflow
+verifies only its recorded scope, not every function in this table.
+
 ## What a Delivery Contains
 
 | Element | What the user receives |
@@ -110,6 +182,8 @@ the reader to encounter methodology before the answer.
 
 The local service supports selected intake, evidence, and validation
 operations. It does not automatically execute the complete pipeline.
+AI-assisted synthesis and cross-verification are documented research
+activities, not an implemented semantic verification engine.
 
 See [the full methodology](docs/methodology.md) and
 [product requirements](docs/product-requirements.md).
@@ -178,7 +252,9 @@ formats, configuration requirements, and operating boundaries.
   device-level identity.
 - Evidence-reference validation does not determine whether a source
   supports a claim.
-- Hashes do not independently establish source authenticity.
+- SHA-256 digests support source-integrity checks. They do not
+  establish source accuracy or authenticity. Assurance depends on
+  protecting the reference digest.
 - Database triggers do not prevent an administrator from changing
   the database file, schema, or service code.
 - The server is synchronous and has no application-level rate limit.
@@ -230,21 +306,23 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 python3 -m unittest minimal_service.test_service -v
 ```
 
-The service unit tests use temporary databases and injected source
-bytes. They do not start the HTTP server or retrieve external sources.
+These are documented commands, not execution results from this
+assessment. The service tests are described as using temporary
+databases and injected source bytes rather than external retrieval.
+Their contents were not inspected for the function-level assessment
+above, so no Tested status is assigned there.
 
-### Recorded service-test result
+### Historical service-test record
 
-[Pull request #2](https://github.com/CadenMcCullenSoftware/project-cerberus/pull/2)
-documents an isolated execution against:
+The previous README attributed an isolated execution to
+[pull request #2](https://github.com/CadenMcCullenSoftware/project-cerberus/pull/2)
+against:
 
 ```text
 ffff487093c7bdfcfec0cd5ff09c9b028ec48bd9
 ```
 
-Recorded environment and result:
-
-| Item | Recorded value |
+| Item | Previously recorded value |
 | --- | --- |
 | Python | 3.12.8 |
 | SQLite | 3.46.1 |
@@ -253,27 +331,31 @@ Recorded environment and result:
 | External retrieval | Not performed |
 | HTTP server or persistent worker startup | Not performed |
 
-This is a historical execution record, not a new result for every
-subsequent repository revision.
+This historical record was not independently reverified in the
+November 1, 2026 assessment. It does not establish Tested or CI
+verified status for `f3471215eef2ee824633264a66b99934420ea61f`
+or for the README update commit.
 
 ### GitHub Actions scope
 
-At the inspected revision
-`5435c08a5e771ada1865021bfb8eec3a9fca3b97`,
-the [repository CI workflow](.github/workflows/cerberus-ci.yml)
-runs framework validation, Bash syntax checks, setup integration
-tests, and whitespace checks.
+The previous README described the
+[repository CI workflow](.github/workflows/cerberus-ci.yml) at
+`5435c08a5e771ada1865021bfb8eec3a9fca3b97` as running framework
+validation, Bash syntax checks, setup integration tests, and
+whitespace checks, without explicitly running
+`minimal_service.test_service`. That is a historical scope
+description, not a verified account of the pinned revision's run.
 
-It does not explicitly run `minimal_service.test_service`.
-Adding that command remains a pending CI correction at this revision.
-
-A successful `validate` check was recorded for the minimal-service
-pull-request head. That check does not establish execution of the
-service tests.
+The earlier recorded successful `validate` check was not
+independently reverified in this assessment and does not establish
+execution of service tests. Inspect the actual workflow and run
+steps before assigning a tested scope or deciding which CI changes
+remain necessary.
 
 Consult [GitHub Actions](https://github.com/CadenMcCullenSoftware/project-cerberus/actions)
 for the result and tested commit of each actual workflow run.
 Workflow presence alone does not establish successful execution.
+The exact-SHA provenance gap is recorded under Implementation Status.
 
 ### Remaining validation
 
@@ -286,8 +368,10 @@ Further integration testing is required for:
 - Worker interruption, lease expiry, and restart recovery.
 - Deployment-specific access controls.
 
-Neither structural checks nor unit-test success establish factual
-accuracy, regulatory compliance, or production readiness.
+Tests cover the listed conditions. They do not establish comprehensive
+coverage, security assurance, or production readiness. Structural
+checks and unit-test results do not establish factual accuracy or
+regulatory compliance.
 
 ## Releases
 
@@ -310,8 +394,9 @@ Committing a workflow does not create a release. Tagging and
 publication require a separate maintainer decision after reviewing
 the exact revision and its validation results.
 
-Checksums verify consistency with the recorded digests; they do not
-independently authenticate the publisher or establish software security.
+SHA-256 digests support source-integrity checks. They do not establish
+source accuracy or authenticity. Assurance depends on protecting the
+reference digest. Checksums do not establish software security.
 
 ## Future AI Segment Mesh Integration
 
@@ -359,5 +444,3 @@ a new license.
 - Record test scope and limitations beside reported results.
 - Keep research constructive, evidence-faithful, and aligned with
   the user's goals.
-
-This AI supports the temple's operations.
