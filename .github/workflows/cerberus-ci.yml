@@ -1,4 +1,4 @@
-# Connector workflow-editing permission test; no workflow behavior changes.
+# Structural validation, setup integration, service unit, and HTTP timeout regression checks.
 name: CERBERUS Repository Checks
 
 on:
