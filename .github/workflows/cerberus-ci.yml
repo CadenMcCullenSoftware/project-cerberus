@@ -34,8 +34,14 @@ jobs:
         run: bash -n setup-cerberus.sh
       - name: Run setup integration tests
         run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Run service and HTTP timeout tests
+        run: |
+          python -m unittest \
+            minimal_service.test_service \
+            minimal_service.test_http_timeout \
+            -v
       - name: Check tracked whitespace
         run: git diff-tree --check --root HEAD
       - name: Record check scope
         run: |
-          echo 'Structural checks and setup integration tests passed. Factual, usability, and security review remain required.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Structural checks, setup integration tests, service unit tests, and HTTP timeout regression tests passed. External retrieval, deployment, factual, usability, and broader security review remain required.' >> "$GITHUB_STEP_SUMMARY"
