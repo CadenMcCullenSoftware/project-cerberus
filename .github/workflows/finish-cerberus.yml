@@ -1,0 +1,260 @@
+name: Finish CERBERUS cleanup
+
+run-name: Verify main CI and clean up the merged repair branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_cleanup:
+        description: "Delete the remote repair branch after CI succeeds"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: cerberus-post-merge-cleanup
+  cancel-in-progress: false
+
+jobs:
+  verify-and-cleanup:
+    name: Verify CI and delete merged remote branch
+    if: ${{ inputs.confirm_cleanup && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_HOST: github.com
+      EXPECTED_REPO: CadenMcCullenSoftware/project-cerberus
+      REPAIR_BRANCH: fix/connector-permissions-2026-11-01
+      CI_WORKFLOW: cerberus-ci.yml
+      PR_NUMBER: "3"
+
+    steps:
+      - name: Validate repository
+        env:
+          ACTUAL_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ "$ACTUAL_REPO" != "$EXPECTED_REPO" ]]; then
+            echo "::error::This workflow is restricted to $EXPECTED_REPO."
+            exit 1
+          fi
+
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify merged pull request and record main commit
+        id: target
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          pr_json="$(gh pr view "$PR_NUMBER" \
+            --repo "$EXPECTED_REPO" \
+            --json state,baseRefName,headRefName,mergeCommit)"
+
+          jq -e --arg branch "$REPAIR_BRANCH" '
+            .state == "MERGED"
+            and .baseRefName == "main"
+            and .headRefName == $branch
+            and .mergeCommit.oid != null
+          ' <<<"$pr_json" >/dev/null
+
+          merge_sha="$(jq -r '.mergeCommit.oid' <<<"$pr_json")"
+          main_sha="$(git rev-parse HEAD)"
+
+          git merge-base --is-ancestor "$merge_sha" "$main_sha"
+
+          echo "main_sha=$main_sha" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Cleanup target"
+            echo "- Repository: \`$EXPECTED_REPO\`"
+            echo "- Main commit: \`$main_sha\`"
+            echo "- Repair branch: \`$REPAIR_BRANCH\`"
+            echo "- Pull request: #$PR_NUMBER"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Dispatch CI and identify the new run
+        id: dispatch
+        env:
+          MAIN_SHA: ${{ steps.target.outputs.main_sha }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          before_ids="$(gh run list \
+            --repo "$EXPECTED_REPO" \
+            --workflow "$CI_WORKFLOW" \
+            --branch main \
+            --event workflow_dispatch \
+            --limit 100 \
+            --json databaseId \
+            --jq 'map(.databaseId)')"
+
+          gh workflow run "$CI_WORKFLOW" \
+            --repo "$EXPECTED_REPO" \
+            --ref main
+
+          for ((attempt = 1; attempt <= 36; attempt++)); do
+            runs="$(gh run list \
+              --repo "$EXPECTED_REPO" \
+              --workflow "$CI_WORKFLOW" \
+              --branch main \
+              --event workflow_dispatch \
+              --limit 100 \
+              --json databaseId,headSha)"
+
+            candidates="$(jq \
+              --arg sha "$MAIN_SHA" \
+              --argjson before "$before_ids" '
+                [
+                  .[]
+                  | select(.headSha == $sha)
+                  | select(
+                      .databaseId as $id
+                      | ($before | index($id)) == null
+                    )
+                ]
+              ' <<<"$runs")"
+
+            count="$(jq 'length' <<<"$candidates")"
+
+            if (( count > 1 )); then
+              echo "::error::Multiple matching runs found; cleanup stopped."
+              exit 1
+            fi
+
+            if (( count == 1 )); then
+              run_id="$(jq -r '.[0].databaseId' <<<"$candidates")"
+              echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+              echo "CI run: https://github.com/$EXPECTED_REPO/actions/runs/$run_id" \
+                >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+
+            sleep 5
+          done
+
+          echo "::error::No unambiguous matching CI run appeared within three minutes."
+          exit 1
+
+      - name: Wait for CI success
+        env:
+          RUN_ID: ${{ steps.dispatch.outputs.run_id }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          # Poll through the REST API instead of relying on run watch.
+          for ((attempt = 1; attempt <= 120; attempt++)); do
+            run_json="$(gh api \
+              "repos/$EXPECTED_REPO/actions/runs/$RUN_ID")"
+
+            status="$(jq -r '.status' <<<"$run_json")"
+            conclusion="$(jq -r '.conclusion // ""' <<<"$run_json")"
+
+            printf 'CI status: %s; conclusion: %s\n' \
+              "$status" "$conclusion"
+
+            if [[ "$status" == "completed" ]]; then
+              if [[ "$conclusion" != "success" ]]; then
+                echo "::error::CI did not succeed. No branch was deleted."
+                exit 1
+              fi
+
+              echo "CI completed successfully." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+
+            sleep 10
+          done
+
+          echo "::error::Timed out waiting for CI. No branch was deleted."
+          exit 1
+
+      - name: Validate and delete the remote repair branch
+        env:
+          MAIN_SHA: ${{ steps.target.outputs.main_sha }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          # Configure authenticated Git access without persisting the token
+          # in the checkout's remote URL.
+          gh auth setup-git --hostname github.com
+
+          git fetch origin \
+            "+refs/heads/main:refs/remotes/origin/main"
+
+          current_main="$(git rev-parse origin/main)"
+
+          if [[ "$current_main" != "$MAIN_SHA" ]]; then
+            echo "::error::main moved during CI. Cleanup stopped."
+            exit 1
+          fi
+
+          remote_line="$(git ls-remote \
+            --heads origin "refs/heads/$REPAIR_BRANCH")"
+
+          if [[ -z "$remote_line" ]]; then
+            echo "Remote repair branch is already absent." \
+              >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          remote_sha="${remote_line%%[[:space:]]*}"
+
+          git fetch origin "refs/heads/$REPAIR_BRANCH"
+
+          if [[ "$(git rev-parse FETCH_HEAD)" != "$remote_sha" ]]; then
+            echo "::error::Repair branch moved during inspection."
+            exit 1
+          fi
+
+          if ! git merge-base --is-ancestor "$remote_sha" "$MAIN_SHA"; then
+            echo "::error::Repair branch contains commits not included in main."
+            exit 1
+          fi
+
+          # The explicit lease prevents deletion if the branch tip changes
+          # after the ancestry check.
+          git push \
+            --force-with-lease="refs/heads/$REPAIR_BRANCH:$remote_sha" \
+            origin ":refs/heads/$REPAIR_BRANCH"
+
+          remaining="$(git ls-remote \
+            --heads origin "refs/heads/$REPAIR_BRANCH")"
+
+          if [[ -n "$remaining" ]]; then
+            echo "::error::Remote repair branch still exists."
+            exit 1
+          fi
+
+          echo "Deleted remote branch: \`$REPAIR_BRANCH\`" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Record final status
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+        shell: bash
+        run: |
+          {
+            echo
+            echo "## Final status"
+            echo "- Cleanup job: $JOB_STATUS"
+            echo "- No local workstation branches were modified."
+            echo "- Failure or timeout does not cancel an already dispatched CI run."
+          } >> "$GITHUB_STEP_SUMMARY"
