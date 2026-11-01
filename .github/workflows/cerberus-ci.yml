@@ -1,3 +1,4 @@
+# Connector workflow-editing permission test; no workflow behavior changes.
 name: CERBERUS Repository Checks
 
 on:
