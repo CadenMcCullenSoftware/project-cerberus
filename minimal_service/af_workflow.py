@@ -78,7 +78,10 @@ def process(data):
         records[1]["entries"].append(dict(base, original=edit["original"], replacement=edit["replacement"], start=edit["start"], end=edit["end"]))
         if "category" in edit or "definition" in edit:
             records[2]["entries"].append(dict(base, **{k: edit[k] for k in ("category", "definition") if k in edit}))
-    records[3]["entries"].append({"letter": "D", "before": applied, "after": final, "note": data.get("structure_note", "Applied term order preserved; no additional restructuring supplied.")})
+    if final != applied:
+        records[3]["entries"].append({"letter": "D", "before": applied, "after": final, "note": data["structure_note"]})
+    else:
+        records[3]["note"] = "No structural correction applied; term order preserved."
     records[4]["entries"].append({"letter": "F", "outputs": ["Type 1", "Type 2"]})
     return {"specification": "CERBERUS-AF-1.0", "source": source, "type_1": final, "type_2": records}
 
@@ -86,6 +89,8 @@ def render(result):
     lines = ["[Type 1 — Simple corrective response]", result["type_1"], "", "[Type 2 — Corrections applied]"]
     for record in result["type_2"]:
         lines.append(str(record["step"]) + ". " + record["term"])
+        if "note" in record:
+            lines.append("  " + record["note"])
         for entry in record["entries"]:
             lines.append("  " + entry["letter"] + " – " + json.dumps({k: v for k, v in entry.items() if k != "letter"}, ensure_ascii=False))
     return "\n".join(lines)
