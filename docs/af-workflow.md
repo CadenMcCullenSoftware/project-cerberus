@@ -3,62 +3,59 @@
 ## [Exact task question]
 Implement this specification in CERBERUS
 
-## [Request and source context]
-Source: user-supplied A–F Artificial Intelligence Assistant Specification — Formalized, November 4, 2026. Repository inspected: CadenMcCullenSoftware/project-cerberus, baseline deec42a0176884b6192fa044bc1c3052ac8f2f3e. Supporting project document: CERBERUS AI System Specification.pdf, sections 6–8 and 14.
+## [Objective and scope]
+Apply explicitly supplied corrections while preserving source text, the order Select → Apply → Configure → Structure → Generate, and Type 1 followed by Type 2. This is an importable Python module and CLI, not an automatic research or terminology-selection engine. The existing HTTP service and browser workspace are not connected to it.
 
-## [Goals and requirements]
-Preserve Select → Apply → Configure → Structure → Generate. Preserve fixed meanings: A terminology adjustment; B tagging/assignment; C content correction; D definitional correction; E historical information inclusion; F responsible, supportive formatting. Produce Type 1 followed by Type 2. Retain source text and source-relative spans. Preserve review as the selected term and Task presented as the applied wording in the supplied example. Repeated letters retain their category meanings; correction IDs distinguish individual changes.
+## [Source and version context]
+Source: user-supplied A–F Artificial Intelligence Assistant Specification — Formalized, November 4, 2026. Initial implementation commit: 41393f37fd5c56b485339087aa166856727b1597. No-change Structure fix: 9e0afa63cd593cc17e5906f60dd953209c5111b3. Repair baseline: b291d8afe560697804acbb593b67ae625786e47d. Output contract version: CERBERUS-AF-1.1.
 
-## [Scope and category tags]
-This first implementation is an importable Python module and command-line entry point. Existing HTTP service and database behavior are unchanged. Input explicitly supplies corrections, category names, definitions, and any final sentence restructuring. The implementation does not infer corrections, verify category registration against a central taxonomy, or establish semantic correctness. Categories A–F are the supplied correction taxonomy, not replacements for other project taxonomies.
+## [Correction categories]
+A: terminology adjustment. B: tagging/assignment. C: content correction. D: definitional correction. E: historical information inclusion. F: responsible, supportive formatting. Repeated letters retain their meanings; correction IDs distinguish changes. These are correction categories, not replacements for separate project information taxonomies.
 
-## [Research questions and methodology]
-1. Identify the repository and default branch through GitHub.
-2. Inspect repository root and minimal_service directory.
-3. Consult project files for ordering, terminology, review, and attribution constraints.
-4. Read minimal_service/service.py to identify existing integration boundaries.
-5. Implement the standalone module and regression tests without altering existing endpoints.
-6. Execute local tests against the prepared module; request exact-content authorization before repository write.
-Tools: GitHub connector, Project Files exploration, Python execution. AI assistance: source review, implementation drafting, and local test execution.
+## [Input contract]
+Required top-level fields: source and corrections. Optional fields: structured_text, structure_note, structure_definition. Each correction requires id, letter, start, end, original, replacement. Optional correction fields: selected_term, category, definition. Offsets use Python string indices into the unchanged source, with an exclusive end. Duplicate IDs, overlapping spans, mismatched originals and invalid letter values are rejected. B requires a supplied category; registration against a central taxonomy is not verified. D span corrections require a supplied definition.
 
-## [Findings and answer]
-The existing service uses Python standard-library HTTP and SQLite components. The new module also uses only the standard library. process(data) returns source, specification version, type_1, and type_2. render(result) emits both response types in order. Span validation rejects mismatched originals and overlapping edits. Explicit structured_text is recorded as a whole-sentence restructuring with a required structure_note; it is not represented as a set of verified token-level changes.
+## [Structure classification]
+If final text equals applied text, Structure entries are empty and an unlettered note records that no structural correction occurred. Identical explicitly supplied final text does not create D.
 
-## [Implementation and use]
+If final text differs, structured_text requires structure_note. Without structure_definition, before/after/note are retained in the step-level restructuring object; entries remain empty and no D label is rendered.
+
+A nonblank structure_definition explicitly declares a definitional correction and is allowed only with changed structured_text. The D entry records that supplied explanation and definition_status=supplied_not_verified. This is a declaration, not semantic verification. The tool does not independently establish that the explanation is correct or relevant.
+
+The original worked example remains supported: selected_term may be review while the applied wording is Task presented. A final sentence supplied through structured_text is not independently generated by the tool.
+
+## [Use and tests]
 From repository root:
 
 ```sh
 python -m minimal_service.af_workflow < correction-request.json
-python -m unittest discover -s tests -p 'test_af_workflow.py' -v
+python -m unittest discover -s tests -p 'test_af_*.py' -v
 ```
 
-Input example:
+Minimal request:
 
 ```json
 {"source":"material","corrections":[{"id":"C-01","letter":"C","start":0,"end":8,"original":"material","replacement":"content"}]}
 ```
 
-Python integration:
+Python callers use process(request_data) for structured output and render(result) for both response types. Consumers of version 1.1 must accept unlettered Structure metadata; they must not assume every text restructuring produces a D entry.
 
-```python
-from minimal_service.af_workflow import process, render
-result = process(request_data)
-response_text = render(result)
-```
+## [Research and verification methodology]
+1. Reviewed current repository source and regression tests during the preceding codebase review.
+2. Confirmed the baseline commit and queried open GitHub issues; none were returned.
+3. Compared automatic D assignment with the supplied correction definition.
+4. Prepared explicit-declaration handling, neutral restructuring records and controlled rejection of malformed letter types.
+5. Executed twelve local regression methods: four original assertion groups and eight updated Structure methods. All passed. The original worked-example assertions were reproduced from inspected source for local execution; original test_af_workflow.py is unchanged in this patch.
+6. Submitted exact proposed file contents for human authorization before repository write.
 
-Each correction requires id, letter, start, end, original, replacement. Offsets use Python string indices and reference the unchanged source. selected_term, category, definition are optional except B requires category and D requires definition. Optional structured_text requires structure_note. Preserve letters as category identifiers rather than incrementing them as entry numbers.
+These results do not establish full repository CI success, browser behavior, external retrieval, semantic correctness or deployment readiness. Local verification and repository commitment are separate states.
 
-## [Verification and derivation]
-Local execution: 4 test methods passed, including 8 invalid-request subcases. Tests cover the exact supplied Type 1 sentence, fixed stage order, review versus Task presented, repeated A category, unchanged content, invalid spans, overlaps, unknown letters, absent B category, duplicate IDs, absent restructuring note, boolean offsets, and absent D definition. These results apply only to this module in the execution environment; full repository tests, HTTP integration, deployment, and semantic validation were not performed.
+## [Remaining work]
+Automatic research/source discovery, model inference, automatic terminology selection, frontend/API integration, persistent correction storage, browser backup import, concurrent-edit handling, authenticated reviewer approval and complete application packaging remain outside this repair. No issue is marked complete solely because this document describes it.
 
-## [Options and action plan]
-Current implementation supports CLI use or explicit Python import. Repository commit requires approval of exact contents. HTTP routing, automated terminology selection, and persistent correction storage are not included in this change.
+## [Review, attribution and change history]
+Human authorization applies to the exact repository write, not a general production-readiness claim. Requested attribution: Nicholas M. Grossi and Caden H. McCullen. No additional ownership determination is made.
 
-## [Uncertainty and review]
-Human review of the patch remains pending. Supplied terms and final example are preserved as project-specific instructions, not universal terminology equivalences. No automatic transformation of unrelated uses of scope, objective, traceability, or evidence occurs. No confidentiality or compliance certification is asserted. No external processing is added by this module.
+1.0: initial correction module, followed by no-change Structure fix. 1.1: explicit supplied-definition classification, unlettered restructuring metadata, malformed-letter rejection, revised tests and documentation. This document describes the accompanying revision; it does not assert a production deployment.
 
-## [Editorial record and attribution]
-Type 2 uses bracketed headings, fixed step names, A–F category labels, correction IDs, and structured entry details. Requested attribution: Nicholas M. Grossi and Caden H. McCullen. No additional authorship or ownership determination is made.
-
-## [Disposition and change history]
-Version CERBERUS-AF-1.0, November 4, 2026. Prepared and locally tested; repository write awaiting explicit authorization. No production deployment or full-specification completion is claimed.
+This AI supports the temple's operations.
